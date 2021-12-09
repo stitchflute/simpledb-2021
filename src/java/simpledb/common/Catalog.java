@@ -24,11 +24,45 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Catalog {
 
     /**
+     * A help class to facilitate organizing the information of each table
+     * */
+    public static class TableCatalog{
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * The file of the table
+         * */
+        public final DbFile file;
+        
+        /**
+         * The name of the table
+         * */
+        public final String tableName;
+
+        /**
+         * The orimary key of the table
+         * */
+        public final String pkeyField;
+
+        public TableCatalog(DbFile file, String name, String pkeyField) {
+            this.file = file;
+            this.tableName = name;
+            this.pkeyField = pkeyField;
+        }
+    }
+
+    private ConcurrentHashMap<String, Integer> nameToId;
+    private ConcurrentHashMap<Integer, TableCatalog> idToTable;
+
+    /**
      * Constructor.
      * Creates a new, empty catalog.
      */
     public Catalog() {
         // some code goes here
+        nameToId = new ConcurrentHashMap<String, Integer>();
+        idToTable = new ConcurrentHashMap<Integer, TableCatalog>();
     }
 
     /**
@@ -42,6 +76,22 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        TableCatalog tc = new TableCatalog(file, name, pkeyField);
+        int fileId = file.getId();
+        if(nameToId.containsKey(name)){
+            int id = nameToId.get(name);
+            nameToId.remove(name);
+            idToTable.remove(id);
+        }
+        if(idToTable.containsKey(fileId)){
+            String tname = idToTable.get(fileId).tableName;
+            // System.out.println("remove: " + tname + ": " + fileId);
+            nameToId.remove(tname);
+            idToTable.remove(fileId);
+        }
+        // System.out.println("insert: " + name + ": " + fileId);
+        nameToId.put(name, fileId);
+        idToTable.put(fileId, tc);
     }
 
     public void addTable(DbFile file, String name) {
@@ -65,7 +115,11 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        if(name == null || !nameToId.containsKey(name)){
+            throw new NoSuchElementException("name doesn't exist " + name);
+        }
+        return nameToId.get(name);
+        // return 0;
     }
 
     /**
@@ -76,7 +130,11 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        if(!idToTable.containsKey(tableid)){
+            throw new NoSuchElementException("tableid doesn't exist " + tableid);
+        }
+        return idToTable.get(tableid).file.getTupleDesc();
+        // return null;
     }
 
     /**
@@ -87,12 +145,20 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        if(!idToTable.containsKey(tableid)){
+            throw new NoSuchElementException("tableid doesn't exist " + tableid);
+        }
+        return idToTable.get(tableid).file;
+        // return null;
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        if(!idToTable.containsKey(tableid)){
+            throw new NoSuchElementException("tableid doesn't exist " + tableid);
+        }
+        return idToTable.get(tableid).pkeyField;
+        // return null;
     }
 
     public Iterator<Integer> tableIdIterator() {
@@ -102,12 +168,18 @@ public class Catalog {
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        if(!idToTable.containsKey(id)){
+            throw new NoSuchElementException("tableid doesn't exist " + id);
+        }
+        return idToTable.get(id).tableName;
+        // return null;
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        nameToId.clear();
+        idToTable.clear();
     }
     
     /**
