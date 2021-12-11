@@ -2,6 +2,7 @@ package simpledb.execution;
 
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.common.DbException;
+import simpledb.execution.Aggregator.Op;
 import simpledb.storage.Tuple;
 import simpledb.storage.TupleDesc;
 
@@ -14,6 +15,11 @@ public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
 
+    private Predicate p;
+    private OpIterator children[];
+    private OpIterator child;
+    // private Iterator<Tuple> it;
+
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -25,29 +31,40 @@ public class Filter extends Operator {
      */
     public Filter(Predicate p, OpIterator child) {
         // some code goes here
+        this.p = p;
+        this.children = new OpIterator[1];
+        this.children[0] = child;
+        this.child = child;
     }
 
     public Predicate getPredicate() {
         // some code goes here
-        return null;
+        return this.p;
+        // return null;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+        return children[0].getTupleDesc();
+        // return null;
     }
 
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        super.open();
+        child.open();
     }
 
     public void close() {
         // some code goes here
+        child.close();
+        super.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+        child.rewind();
     }
 
     /**
@@ -62,18 +79,28 @@ public class Filter extends Operator {
     protected Tuple fetchNext() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // some code goes here
+        // if(child == null) return null;
+        
+        while(child.hasNext()){
+            Tuple t = child.next();
+            if(p.filter(t)){
+                return t;
+            }
+        }
         return null;
     }
 
     @Override
     public OpIterator[] getChildren() {
         // some code goes here
-        return null;
+        return this.children;
+        // return null;
     }
 
     @Override
     public void setChildren(OpIterator[] children) {
         // some code goes here
+        this.children = children;
     }
 
 }

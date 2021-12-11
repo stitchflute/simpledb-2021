@@ -101,9 +101,10 @@ public class Tuple implements Serializable {
     public String toString() {
         // some code goes here
         String res = "";
-        for(int i = 0; i < fields.size(); ++i){
+        for (int i = 0; i < fields.size(); ++i) {
             res += fields.get(i).toString() + " ";
         }
+        res += "\n";
         return res;
         // throw new UnsupportedOperationException("Implement this");
     }
