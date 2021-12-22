@@ -133,23 +133,28 @@ public class HeapFile implements DbFile {
         // not necessary for lab1
         int num = numPages();
         List<Page> list = new ArrayList<>();
+        HeapPageId npid = null;
         for(int i = 0; i < num; ++i){
-            HeapPageId pid = new HeapPageId(getId(), i);
-            HeapPage page = (HeapPage)(Database.getBufferPool().getPage(tid, pid, Permissions.READ_WRITE));
+            npid = new HeapPageId(getId(), i);
+            HeapPage page = (HeapPage)(Database.getBufferPool().getPage(tid, npid, Permissions.READ_WRITE));
             if(page.getNumEmptySlots() > 0){
                 page.insertTuple(t);
                 page.markDirty(true, tid);
                 list.add(page);
+                Database.getBufferPool().unsafeReleasePage(tid, npid);
+                break;
             }
+            Database.getBufferPool().unsafeReleasePage(tid, npid);
         }
         if(list.size() == 0){
-            HeapPageId npid = new HeapPageId(getId(), num);
+            npid = new HeapPageId(getId(), num);
             HeapPage blankpage = new HeapPage(npid, HeapPage.createEmptyPageData());
             writePage(blankpage); // write new page to file
             HeapPage npage = (HeapPage)(Database.getBufferPool().getPage(tid, npid, Permissions.READ_WRITE));
             npage.insertTuple(t);
             npage.markDirty(true, tid);
             list.add(npage);
+            Database.getBufferPool().unsafeReleasePage(tid, npid);
         }
         return list;
     }
@@ -167,6 +172,7 @@ public class HeapFile implements DbFile {
         page.deleteTuple(t);
         page.markDirty(true, tid);
         list.add(page);
+        Database.getBufferPool().unsafeReleasePage(tid, pid);
         return list;
     }
 

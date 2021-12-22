@@ -163,7 +163,8 @@ public class Catalog {
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return idToTable.keySet().iterator();
+        // return null;
     }
 
     public String getTableName(int id) {

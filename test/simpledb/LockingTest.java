@@ -109,18 +109,18 @@ public class LockingTest extends TestUtil.CreateHeapFile {
    */
   @Test public void acquireReadLocksOnSamePage() throws Exception {
     metaLockTester(tid1, p0, Permissions.READ_ONLY,
-                   tid2, p0, Permissions.READ_ONLY, true);
+    tid2, p0, Permissions.READ_ONLY, true);
   }
-
+  
   /**
    * Unit test for BufferPool.getPage() assuming locking.
    * Acquires a read lock and a write lock on the same page, in that order.
    */
   @Test public void acquireReadWriteLocksOnSamePage() throws Exception {
     metaLockTester(tid1, p0, Permissions.READ_ONLY,
-                   tid2, p0, Permissions.READ_WRITE, false);
+    tid2, p0, Permissions.READ_WRITE, false);
   }
-
+  
   /**
    * Unit test for BufferPool.getPage() assuming locking.
    * Acquires a write lock and a read lock on the same page, in that order.

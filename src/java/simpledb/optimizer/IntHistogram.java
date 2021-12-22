@@ -5,6 +5,12 @@ import simpledb.execution.Predicate;
 /** A class to represent a fixed-width histogram over a single integer-based field.
  */
 public class IntHistogram {
+    
+    private int min;
+    private int max;
+    private int histogram[];
+    private int range;
+    private int totalNum;
 
     /**
      * Create a new IntHistogram.
@@ -24,6 +30,11 @@ public class IntHistogram {
      */
     public IntHistogram(int buckets, int min, int max) {
     	// some code goes here
+        this.min = min;
+        this.max = max;
+        this.range = ((max-min) < buckets) ? 1 : (max-min+buckets-1)/buckets;
+        this.histogram = new int[buckets];
+        this.totalNum = 0;
     }
 
     /**
@@ -32,6 +43,14 @@ public class IntHistogram {
      */
     public void addValue(int v) {
     	// some code goes here
+        if(v < min || v > max) return;
+        int idx = (v-min) / range;
+        if(idx < 0) 
+            idx = 0;
+        else if (idx >= histogram.length)
+            idx = histogram.length-1;
+        histogram[idx]++;
+        totalNum++;
     }
 
     /**
@@ -47,7 +66,33 @@ public class IntHistogram {
     public double estimateSelectivity(Predicate.Op op, int v) {
 
     	// some code goes here
-        return -1.0;
+        double selectivity = 0.0;
+        if (op.equals(Predicate.Op.LESS_THAN)) {
+            if(v <= min) return 0.0;
+            if(v >= max) return 1.0;
+            int idx = (v-min)/range;
+            int width = (idx == histogram.length-1) ? max - min - range*idx : range;
+            int b_left = min + range*idx;
+            int sum = 0;
+            for(int i = 0; i < idx; ++i)
+                sum += histogram[i];
+            sum += histogram[idx] * (v - b_left) / width;
+            selectivity = sum*1.0 / totalNum;
+            return selectivity;
+        }
+        if(op.equals(Predicate.Op.LESS_THAN_OR_EQ))
+            return estimateSelectivity(Predicate.Op.LESS_THAN, v+1);
+        if(op.equals(Predicate.Op.GREATER_THAN))
+            return 1 - estimateSelectivity(Predicate.Op.LESS_THAN_OR_EQ, v);
+        if(op.equals(Predicate.Op.GREATER_THAN_OR_EQ))
+            return 1 - estimateSelectivity(Predicate.Op.LESS_THAN, v);
+        if(op.equals(Predicate.Op.EQUALS))
+            return estimateSelectivity(Predicate.Op.LESS_THAN_OR_EQ, v) - 
+                    estimateSelectivity(Predicate.Op.LESS_THAN, v);
+        if(op.equals(Predicate.Op.NOT_EQUALS))
+            return 1 - estimateSelectivity(Predicate.Op.EQUALS, v);
+        System.out.println("estSelect op is not valid");
+        return 0.0;    
     }
     
     /**
